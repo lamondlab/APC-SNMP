@@ -4,7 +4,8 @@ from pysnmp.carrier.asyncore.dispatch import AsyncoreDispatcher
 from pysnmp.carrier.asyncore.dgram import udp, udp6, unix
 from pyasn1.codec.ber import decoder
 from pysnmp.proto import api
-from pysnmp.smi import builder, view, rfc1902
+from pysnmp.smi import builder, view
+from pysnmp.smi.rfc1902 import ObjectType, ObjectIdentity
 import os, logging
 from logging.handlers import RotatingFileHandler
 import netifaces as ni
@@ -18,10 +19,20 @@ TEN_MEGABYTES=10485760
 #LOG_FILE="./ups.log"
 LOG_FILE="/var/log/ups.log"
 
+COMPILED_MIB_PATH=os.path.join(os.getcwd(), "CompiledMIBs")
+MIB_MODULES=('SNMPv2-MIB', 'SNMP-COMMUNITY-MIB', 'PowerNet-MIB', 'UPS-MIB')
+
+
 LOGGING_FORMAT="%(asctime)s %(levelname)s - %(message)s"
 loggingHandler=RotatingFileHandler(LOG_FILE, maxBytes=TEN_MEGABYTES, backupCount=5)
 logging.basicConfig(format=LOGGING_FORMAT, handlers=(loggingHandler,))
 logging.getLogger('apctrap').setLevel(logging.INFO)
+
+mibBuilder=builder.MibBuilder()
+mibSources=mibBuilder.getMibSources()+(builder.DirMibSources(COMPILED_MIB_PATH),)
+mibBuilder.setMibSources(*mibSources)
+mibBuilder.loadModules(*MIB_MODULES)
+viewController=view.MibViewController(mibBuilder)
 
 def secsToTime(s):
     d=s/86400
@@ -53,9 +64,10 @@ def snmpRecvCallback(dispatcher, domain, address, msg):
 
         for v,b in varBinds:
             key='.'.join([str(i) for i in v._value])
-            valueb.getComponent('simple')._value
+            value=b.getComponent('simple')._value
 
-		
+            print(viewController.getNodeName(v._value))
+            print(ObjectType(ObjectIdentity(key), value).resolveWithMib(viewController).prettyPrint())
 
     return msg
 
