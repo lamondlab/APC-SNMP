@@ -2,7 +2,7 @@ from pysnmp.smi import builder, view, rfc1902
 import os
 
 mb=builder.MibBuilder()
-mibSrcs=mb.getMibSources()+(builder.DirMibSource('/home/pi/.pysnmp/mibs/'),)
+mibSrcs=mb.getMibSources()+(builder.DirMibSource(os.path.join(os.getcwd(), "CompiledMIBs")),)
 mb.setMibSources(*mibSrcs)
 print(mibSrcs)
 mb.loadModules('SNMPv2-MIB', 'SNMP-COMMUNITY-MIB', 'PowerNet-MIB', 'UPS-MIB')
