@@ -7,15 +7,17 @@ import os, logging
 from logging.handlers import RotatingFileHandler
 import netifaces as ni
 
-#TRAP_IP_ADDRESS=ni.ifaddresses('eth0')[2][0]['addr']
-TRAP_IP_ADDRESS=ni.ifaddresses('en0')[2][0]['addr']
+TRAP_IP_ADDRESS=ni.ifaddresses('eth0')[2][0]['addr']
+#TRAP_IP_ADDRESS=ni.ifaddresses('en0')[2][0]['addr']
 TRAP_PORT=162
 TEN_MEGABYTES=10485760
-LOG_FILE="./ups.log" #"/var/log/ups.log"
+#LOG_FILE="./ups.log"
+LOG_FILE="/var/log/ups.log"
 
-LOGGING_FORMAT="%{asctime}s %{levelname} %{message}s"
+LOGGING_FORMAT="%(asctime)s %(levelname)s - %(message)s"
 loggingHandler=RotatingFileHandler(LOG_FILE, maxBytes=TEN_MEGABYTES, backupCount=5)
 logging.basicConfig(format=LOGGING_FORMAT, handlers=(loggingHandler,))
+logging.getLogger('apctrap').setLevel(logging.INFO)
 
 def secsToTime(s):
     d=s/86400
@@ -32,17 +34,17 @@ def snmpRecvCallback(dispatcher, domain, address, msg):
         version=int(api.decodeMessageVersion(msg))
         if version in api.protoModules: module=api.protoModules[version]
         else:
-            logger.error("Unsupported SNMP version {}".format(version))
+            logger.error("Unsupported SNMP version {0}".format(version))
             return
 
         req,msg=decoder.decode(msg, asn1Spec=module.Message())
-        logger.info("Notification message from {}:{}".format(domain, address))
+        logger.info("Notification from {0}:{1}".format(domain, address))
 
         pdu=module.apiMessage.getPDU(req)
         if not pdu.isSameTypeWith(module.TrapPDU()): continue
 
         if version==api.protoVersion1:
-            print(module,req)
+            print(req)
 
         else: pass
     return msg
