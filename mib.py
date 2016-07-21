@@ -1,4 +1,4 @@
-from pysnmp.smi import builder, view, compiler, rfc1902
+from pysnmp.smi import builder, view, rfc1902
 import os
 
 mb=builder.MibBuilder()
@@ -18,13 +18,6 @@ varBinds=[
 
 ]
 
-#varBinds=[
-#    for x in varBinds
-#]
-
-#for vb in varBinds: print(vb.prettyPrint())
-
-#print(vc.getNodeName((1,3,6,1,2)))
 for k,v in varBinds:
     q=tuple(int(kk) for kk in k.split('.'))
     print(k,q)

@@ -4,8 +4,6 @@ from pyasn1.codec.ber import decoder
 from pysnmp.proto import api
 import netifaces as ni
 
-#IPADDR="10.128.235.241"
-#IPADDR="localhost"
 IPADDR=ni.ifaddresses('eth0')[2][0]['addr']
 PORT=162
 
