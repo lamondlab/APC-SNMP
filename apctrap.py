@@ -44,9 +44,10 @@ def snmpRecvCallback(dispatcher, domain, address, msg):
         if not pdu.isSameTypeWith(module.TrapPDU()): continue
 
         if version==api.protoVersion1:
-            print(req)
+            varBinds=module.apiTrapPDU.getVarBindList(req)
+        else: varBinds=module.apiPDU.getVarBindList(req)
 
-        else: pass
+        for v,b in varBinds: print("{} = {}".format(v.b))
     return msg
 
 dispatcher=AsyncoreDispatcher()
