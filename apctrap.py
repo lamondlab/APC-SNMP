@@ -1,3 +1,5 @@
+print("Import...")
+
 from pysnmp.carrier.asyncore.dispatch import AsyncoreDispatcher
 from pysnmp.carrier.asyncore.dgram import udp, udp6, unix
 from pyasn1.codec.ber import decoder
@@ -6,6 +8,8 @@ from pysnmp.smi import builder, view, rfc1902
 import os, logging
 from logging.handlers import RotatingFileHandler
 import netifaces as ni
+
+print("Setup...")
 
 TRAP_IP_ADDRESS=ni.ifaddresses('eth0')[2][0]['addr']
 #TRAP_IP_ADDRESS=ni.ifaddresses('en0')[2][0]['addr']
@@ -44,10 +48,15 @@ def snmpRecvCallback(dispatcher, domain, address, msg):
         if not pdu.isSameTypeWith(module.TrapPDU()): continue
 
         if version==api.protoVersion1:
-            varBinds=module.apiTrapPDU.getVarBindList(req)
-        else: varBinds=module.apiPDU.getVarBindList(req)
+            varBinds=module.apiTrapPDU.getVarBindList(pdu)
+        else: varBinds=module.apiPDU.getVarBindList(pdu)
 
-        for v,b in varBinds: print("{} = {}".format(v.b))
+        for v,b in varBinds:
+            key='.'.join([str(i) for i in v._value])
+            valueb.getComponent('simple')._value
+
+		
+
     return msg
 
 dispatcher=AsyncoreDispatcher()
@@ -56,6 +65,7 @@ dispatcher.registerTransport(
     udp.domainName, udp.UdpSocketTransport().openServerMode((TRAP_IP_ADDRESS, TRAP_PORT))
 )
 dispatcher.jobStarted(1)
+print("Starting...")
 try: dispatcher.runDispatcher()
 except:
     dispatcher.closeDispatcher()
