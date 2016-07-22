@@ -25,8 +25,7 @@ LOG_FILE="/var/log/ups.log"
 COMPILED_MIB_PATH=os.path.join(os.getcwd(), "CompiledMIBs")
 MIB_MODULES=('SNMPv2-MIB', 'SNMP-COMMUNITY-MIB', 'PowerNet-MIB', 'UPS-MIB')
 
-
-LOGGING_FORMAT="%(asctime)s %(levelname)s - %(message)s"
+LOGGING_FORMAT="%(asctime)s\t%(levelname)s\t%(message)s"
 loggingHandler=RotatingFileHandler(LOG_FILE, maxBytes=TEN_MEGABYTES, backupCount=5)
 logging.basicConfig(format=LOGGING_FORMAT, handlers=(loggingHandler,))
 logging.getLogger('apctrap').setLevel(logging.INFO)
@@ -52,11 +51,11 @@ def snmpRecvCallback(dispatcher, domain, address, msg):
         version=int(api.decodeMessageVersion(msg))
         if version in api.protoModules: module=api.protoModules[version]
         else:
-            logger.error("Unsupported SNMP version {0}".format(version))
+            logger.error("SYSTEM\tERROR | Unsupported SNMP Version")
             return
 
         req,msg=decoder.decode(msg, asn1Spec=module.Message())
-        logger.info("Notification from {0}:{1}".format(domain, address))
+        logger.info("NOTIFICATION\t{} | {}".format(address, domain))
 
         pdu=module.apiMessage.getPDU(req)
         if not pdu.isSameTypeWith(module.TrapPDU()): continue
@@ -69,15 +68,13 @@ def snmpRecvCallback(dispatcher, domain, address, msg):
             key='.'.join([str(i) for i in v._value])
             value=b.getComponent('simple')._value
 
-            print(viewController.getNodeName(v._value))
             parsed=ObjectType(ObjectIdentity(key), value)
             try: parsed.resolveWithMib(viewController)
             except Exception as e: 
-                print("Failed to resolve symbol: {}={} ({})", key, value,e)
+                logger.warning("TRAP\tERROR | Failed to resolve symbol ({}={})".format(key,value))
                 continue
-            print(parsed[0].getMibSymbol(), end="")
-            try: print(parsed[1]._value)
-            except AttributeError: print(parsed[1].getMibSymbol())
+            key,value=parsed.prettyPrint().split(" = ")
+            logger.info("TRAP\t{} | {}".format(key,value))
 
     return msg
 
