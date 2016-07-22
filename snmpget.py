@@ -1,4 +1,5 @@
 from time import sleep
+from datetime import datetime
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 
 commands=(
@@ -33,7 +34,7 @@ commands=(
     ('upsHighPrecOutputEnergyUsage',0), # kWh *10
 )
 
-print("Create MIB Variables...")
+print("{}: Create MIB Variables...".format(str(datetime.now())))
 mibVariables=[]
 for cmd in commands:
     mibVariables.append(
@@ -41,6 +42,7 @@ for cmd in commands:
     )
 
 def heartbeat():
+    print("{}: Heartbeating...?".format(str(datetime.now())))
     cmdGen=cmdgen.CommandGenerator()
     indication,status,index,varBinds=cmdGen.getCmd(
         cmdgen.CommunityData('public', mpModel=0),
@@ -48,6 +50,7 @@ def heartbeat():
         *mibVariables
     )
 
+    print("{}: Parsed:".format(str(datetime.now())))
     if indication: print(indication)
     else:
         if status:
@@ -59,10 +62,9 @@ def heartbeat():
             for name,val in varBinds:
                 print("{} = {}".format(name.prettyPrint(), val.prettyPrint()))
 
-print("Starting...")
+print("{}: Starting...".format(str(datetime.now())))
 while 1:
     try:
-        print("Heartbeating...?")
         heartbeat()
         sleep(30)
     except KeyboardInterrupt: break
