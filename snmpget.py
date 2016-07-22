@@ -2,10 +2,15 @@ from pysnmp.entity.rfc3413.oneliner import cmdgen
 
 cmdGen=cmdgen.CommandGenerator()
 
+c1=cmdgen.MibVariable('PowerNet-MIB','upsBasicIdentModel',0).addMibSource('/home/pi/APC-SNMP/CompiledMIBs')
+c2=cmdgen.MibVariable('PowerNet-MIB','upsBasicOutputStatus',0).addMibSource('/home/pi/APC-SNMP/CompiledMIBs')
+
 indication,status,index,varBinds=cmdGen.getCmd(
-	cmdgen.CommunityData('public'),
+	cmdgen.CommunityData('public', mpModel=0),
 	cmdgen.UdpTransportTarget(('134.36.67.93',161)),
-	'1.3.6.1.4.1.318.1.2.1.1.1.0'
+        cmdgen.MibVariable('iso.org.dod.internet.mgmt.mib-2.system.sysDescr.0'),
+        cmdgen.MibVariable('SNMPv2-MIB', 'sysDescr', 0),
+        c1,c2
 )
 
 if indication: print(indication)
