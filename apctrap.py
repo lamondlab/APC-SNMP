@@ -9,8 +9,11 @@ from pysnmp.smi.rfc1902 import ObjectType, ObjectIdentity
 import os, logging
 from logging.handlers import RotatingFileHandler
 import netifaces as ni
+from redis import Redis
 
 print("Setup...")
+
+redis=Redis()
 
 TRAP_IP_ADDRESS=ni.ifaddresses('eth0')[2][0]['addr']
 #TRAP_IP_ADDRESS=ni.ifaddresses('en0')[2][0]['addr']
