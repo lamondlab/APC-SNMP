@@ -12,24 +12,29 @@ commands=(
 
     # Battery
     ('upsBasicBatteryStatus',0),         # str
-    ('upsAdvBatteryCapacity',0),         # str
-    ('upsAdvBatteryTemperature',0),      # °C
+    ('upsBasicBatteryTimeOnBattery',0),         # x10-2 (1/100) seconds
+    ('upsHighPrecBatteryCapacity',0),         # %
+    ('upsHighPrecBatteryTemperature',0),      # °C
     ('upsAdvBatteryRunTimeRemaining',0), # x10-2 (1/100) seconds 
+    ('upsHighPrecBatteryActualVoltage',0),    # V
 
     # Input Voltage
-    ('upsBasicInputPhase',0),
-    ('upsAdvInputLineVoltage',0),
-    ('upsAdvInputMaxLineVoltage',0),
-    ('upsAdvInputMinLineVoltage',0),
-    ('upsAdvInputFrequency',0),
-    ('upsAdvLineFailCaus',0),
+    ('upsBasicInputPhase',0),             # 
+    ('upsHighPrecInputLineVoltage',0),    # V *10
+    ('upsHighPrecInputMaxLineVoltage',0), # V *10
+    ('upsHighPrecInputMinLineVoltage',0), # V *10
+    ('upsHighPrecInputFrequency',0),      # Hz *10
+    ('upsAdvInputLineFailCause',0),       #
 
     # Output Voltage
-    ('upsBasicOutputStatus',0),
-    ('upsAdvOutputVoltage',0),
-    ('upsAdvOutputFrequency',0),
-    ('upsAdvOutputLoad',0),
-    ('upsAdvOutputCurrent',0), 
+    ('upsBasicOutputStatus',0),         #
+    ('upsBasicOutputPhase',0),          # 
+    ('upsHighPrecOutputVoltage',0),     # V *10
+    ('upsHighPrecOutputFrequency',0),   # Hz *10
+    ('upsHighPrecOutputLoad',0),        # % *10
+    ('upsHighPrecOutputCurrent',0),     # A *10
+    ('upsHighPrecOutputEfficiency',0),  # % *10
+    ('upsHighPrecOutputEnergyUsage',0), # kWh *10
 )
 mibVariables=[]
 for cmd in commands:
