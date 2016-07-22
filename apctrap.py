@@ -37,11 +37,11 @@ mibBuilder.loadModules(*MIB_MODULES)
 viewController=view.MibViewController(mibBuilder)
 
 def secsToTime(s):
-    d=s/86400
+    d=s//86400
     s-=(86400*d)
-    h=s/3600
+    h=s//3600
     s-=(h*3600)
-    m=s/60
+    m=s//60
     s-=(60*m)
     return d,h,m,s
 
