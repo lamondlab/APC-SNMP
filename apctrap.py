@@ -29,7 +29,7 @@ logging.basicConfig(format=LOGGING_FORMAT, handlers=(loggingHandler,))
 logging.getLogger('apctrap').setLevel(logging.INFO)
 
 mibBuilder=builder.MibBuilder()
-mibSources=mibBuilder.getMibSources()+(builder.DirMibSources(COMPILED_MIB_PATH),)
+mibSources=mibBuilder.getMibSources()+(builder.DirMibSource(COMPILED_MIB_PATH),)
 mibBuilder.setMibSources(*mibSources)
 mibBuilder.loadModules(*MIB_MODULES)
 viewController=view.MibViewController(mibBuilder)
@@ -67,7 +67,14 @@ def snmpRecvCallback(dispatcher, domain, address, msg):
             value=b.getComponent('simple')._value
 
             print(viewController.getNodeName(v._value))
-            print(ObjectType(ObjectIdentity(key), value).resolveWithMib(viewController).prettyPrint())
+            parsed=ObjectType(ObjectIdentity(key), value)
+            try: parsed.resolveWithMib(viewController)
+            except Exception as e: 
+                print("Failed to resolve symbol: {}={} ({})", key, value,e)
+                continue
+            print(parsed[0].getMibSymbol(), end="")
+            try: print(parsed[1]._value)
+            except AttributeError: print(parsed[1].getMibSymbol())
 
     return msg
 
