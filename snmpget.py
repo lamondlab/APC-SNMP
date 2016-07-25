@@ -19,7 +19,6 @@ commands=(
     ('upsHighPrecBatteryActualVoltage',0), # V *10
 
     # Input Voltage
-    #('upsBasicInputPhase',0),             # 
     ('upsHighPrecInputLineVoltage',0),    # V *10
     ('upsHighPrecInputMaxLineVoltage',0), # V *10
     ('upsHighPrecInputMinLineVoltage',0), # V *10
@@ -28,13 +27,48 @@ commands=(
 
     # Output Voltage
     ('upsBasicOutputStatus',0),         #
-    #('upsBasicOutputPhase',0),          # 
     ('upsHighPrecOutputVoltage',0),     # V *10
     ('upsHighPrecOutputFrequency',0),   # Hz *10
     ('upsHighPrecOutputLoad',0),        # % *10
     ('upsHighPrecOutputCurrent',0),     # A *10
     ('upsHighPrecOutputEfficiency',0),  # % *10
     ('upsHighPrecOutputEnergyUsage',0), # kWh *10
+)
+
+status=(
+    'unknown',
+    'onLine',
+    'onBattery',
+    'onSmartBoost',
+    'timedSleeping',
+    'softwareBypass',
+    'off',
+    'rebooting',
+    'switchedBypass',
+    'hardwareFailureBypass',
+    'sleepingUntilPowerReturn',
+    'onSmartTrim',
+    'ecoMode',
+    'hotStandby',
+    'onBatteryTest',
+    'emergencyStaticBypass',
+    'staticBypassStandby',
+    'powerSavingMode',
+    'spotMode',
+    'eConversion'
+)
+
+failCause=(
+    'noTransfer',
+    'highLineVoltage',
+    'brownout',
+    'blackout',
+    'smallMomentarySag',
+    'deepMomentarySag',
+    'smallMomentarySpike',
+    'largeMomentarySpike',
+    'selfTest',
+    'rateOfVoltageChange',
 )
 
 keys={
@@ -46,14 +80,12 @@ keys={
     "PowerNet-MIB::upsHighPrecBatteryTemperature.0":"batteryTemperature",
     "PowerNet-MIB::upsAdvBatteryRunTimeRemaining.0":"batteryTimeRemaining",
     "PowerNet-MIB::upsHighPrecBatteryActualVoltage.0":"batteryVoltage",
-    #"PowerNet-MIB::upsBasicInputPhase.0":"",
     "PowerNet-MIB::upsHighPrecInputLineVoltage.0":"inputVoltage",
     "PowerNet-MIB::upsHighPrecInputMaxLineVoltage.0":"inputVoltageMax",
     "PowerNet-MIB::upsHighPrecInputMinLineVoltage.0":"inputVoltageMin",
     "PowerNet-MIB::upsHighPrecInputFrequency.0":"inputFrequency",
     "PowerNet-MIB::upsAdvInputLineFailCause.0":"inputFailCause",
     "PowerNet-MIB::upsBasicOutputStatus.0":"outputStatus",
-    #"PowerNet-MIB::upsBasicOutputPhase.0":"",
     "PowerNet-MIB::upsHighPrecOutputVoltage.0":"outputVoltage",
     "PowerNet-MIB::upsHighPrecOutputFrequency.0":"outputFrequency",
     "PowerNet-MIB::upsHighPrecOutputLoad.0":"outputLoad",
@@ -69,14 +101,12 @@ keys={
     "SNMPv2-SMI::enterprises.318.1.1.1.2.3.2.0":"batteryTemperature",
     "SNMPv2-SMI::enterprises.318.1.1.1.2.2.3.0":"batteryTimeRemaining",
     "SNMPv2-SMI::enterprises.318.1.1.1.2.3.4.0":"batteryVoltage",
-    #"SNMPv2-SMI::enterprises.318.1.1.1.3.1.1.0":"",
     "SNMPv2-SMI::enterprises.318.1.1.1.3.3.1.0":"inputVoltage",
     "SNMPv2-SMI::enterprises.318.1.1.1.3.3.2.0":"inputVoltageMax",
     "SNMPv2-SMI::enterprises.318.1.1.1.3.3.3.0":"inputVoltageMin",
     "SNMPv2-SMI::enterprises.318.1.1.1.3.3.4.0":"inputFrequency",
     "SNMPv2-SMI::enterprises.318.1.1.1.3.2.5.0":"inputFailCause",
     "SNMPv2-SMI::enterprises.318.1.1.1.4.1.1.0":"outputStatus",
-    #"SNMPv2-SMI::enterprises.318.1.1.1.4.1.2.0":"",
     "SNMPv2-SMI::enterprises.318.1.1.1.4.3.1.0":"outputVoltage",
     "SNMPv2-SMI::enterprises.318.1.1.1.4.3.2.0":"outputFrequency",
     "SNMPv2-SMI::enterprises.318.1.1.1.4.3.3.0":"outputLoad",
@@ -98,11 +128,20 @@ def strTime(s):
     _,_,m,s=timeTickToTime(int(s))
     return "{:02d}:{:02d}".format(m,s)
 
+def strStatus(s):
+    try: code=int(s)
+    except ValueError: return s
+    else: return status[code+1]
+
+def strFail(s)
+    try: code=int(s)
+    except ValueError: return s
+    else: return status[code+1]
 
 cmdLookup=dict(
     upsModel=lambda x: str(x),
     upsStatus=lambda x: str(x),
-    batteryStatus=lambda x: str(x),
+    batteryStatus=strStatus, #lambda x: str(x),
     batteryTime=lambda x: int(x),
     batteryCapacity=lambda x: float(x)/10.,
     batteryTemperature=lambda x: float(x)/10.,
@@ -112,8 +151,8 @@ cmdLookup=dict(
     inputVoltageMax=lambda x: float(x)/10.,
     inputVoltageMin=lambda x: float(x)/10.,
     inputFrequency=lambda x: float(x)/10.,
-    inputFailCause=lambda x: str(x),
-    outputStatus=lambda x: str(x),
+    inputFailCause=strFail, # lambda x: str(x),
+    outputStatus=strStatus, #lambda x: str(x),
     outputVoltage=lambda x: float(x)/10.,
     outputFrequency=lambda x: float(x)/10.,
     outputLoad=lambda x: float(x)/10.,
