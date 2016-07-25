@@ -1,6 +1,9 @@
 from time import sleep
 from datetime import datetime
 from pysnmp.entity.rfc3413.oneliner import cmdgen
+import redis
+
+_redis=redis.Redis(host="127.0.0.1", port=6379)
 
 commands=(
     # Identity
@@ -146,14 +149,14 @@ def heartbeat():
             ))
         else:
             for name,val in varBinds:
-                #print("{} = {}".format(name.prettyPrint(), val.prettyPrint()))
                 name,val=name.prettyPrint(),val.prettyPrint()
                 try: name=keys[name]
                 except KeyError as e:
                     print("ERROR:",e)
                     continue
                 val=cmdLookup[name](val)
-                print(name,val,(type(name),type(val)))
+                _redis.set(name,val)
+            _redis.set("heartbeat",str(datetime.now()))
 
 print("{}: Starting...".format(str(datetime.now())))
 while 1:
