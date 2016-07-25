@@ -1,13 +1,21 @@
 from time import sleep
 from datetime import datetime
 from pysnmp.entity.rfc3413.oneliner import cmdgen
-import redis
+import redis, logging
+from logging.handlers import RotatingFileHandler
+
+LOG_FILE="/var/log/snmpget.log"
+LOGGING_FORMAT="%(asctime)s\t%(levelname)s\t%(message)s"
+TEN_MEGABYTES=10485760
+loggingHandler=RotatingFileHandler(LOG_FILE, maxBytes=TEN_MEGABYTES, backupCount=5)
+logging.basicConfig(format=LOGGING_FORMAT, handlers=(loggingHandler,))
+logger=logging.getLogger('snmpget')
+logger.setLevel(logging.INFO)
 
 _redis=redis.Redis(host="127.0.0.1", port=6379)
 
 commands=(
     # Identity
-    ('upsBasicIdentModel',0),
     ('upsBasicOutputStatus',0),
 
     # Battery
@@ -73,7 +81,6 @@ failCause=(
 
 keys={
     "PowerNet-MIB::upsBasicIdentModel.0":"upsModel",
-    "PowerNet-MIB::upsBasicOutputStatus.0":"upsStatus",
     "PowerNet-MIB::upsBasicBatteryStatus.0":"batteryStatus",
     "PowerNet-MIB::upsBasicBatteryTimeOnBattery.0":"batteryTime",
     "PowerNet-MIB::upsHighPrecBatteryCapacity.0":"batteryCapacity",
@@ -94,7 +101,6 @@ keys={
     "PowerNet-MIB::upsHighPrecOutputEnergyUsage.0":"outputEnergyUsage",
 
     "SNMPv2-SMI::enterprises.318.1.1.1.1.1.1.0":"upsModel",
-    "SNMPv2-SMI::enterprises.318.1.1.1.4.1.1.0":"upsStatus",
     "SNMPv2-SMI::enterprises.318.1.1.1.2.1.1.0":"batteryStatus",
     "SNMPv2-SMI::enterprises.318.1.1.1.2.1.2.0":"batteryTime",
     "SNMPv2-SMI::enterprises.318.1.1.1.2.3.1.0":"batteryCapacity",
@@ -131,17 +137,16 @@ def strTime(s):
 def strStatus(s):
     try: code=int(s)
     except ValueError: return s
-    else: return status[code+1]
+    else: return status[code-1]
 
-def strFail(s)
+def strFail(s):
     try: code=int(s)
     except ValueError: return s
-    else: return status[code+1]
+    else: return failCause[code-1]
 
 cmdLookup=dict(
     upsModel=lambda x: str(x),
-    upsStatus=lambda x: str(x),
-    batteryStatus=strStatus, #lambda x: str(x),
+    batteryStatus=strStatus,
     batteryTime=lambda x: int(x),
     batteryCapacity=lambda x: float(x)/10.,
     batteryTemperature=lambda x: float(x)/10.,
@@ -151,8 +156,8 @@ cmdLookup=dict(
     inputVoltageMax=lambda x: float(x)/10.,
     inputVoltageMin=lambda x: float(x)/10.,
     inputFrequency=lambda x: float(x)/10.,
-    inputFailCause=strFail, # lambda x: str(x),
-    outputStatus=strStatus, #lambda x: str(x),
+    inputFailCause=strFail,
+    outputStatus=strStatus,
     outputVoltage=lambda x: float(x)/10.,
     outputFrequency=lambda x: float(x)/10.,
     outputLoad=lambda x: float(x)/10.,
@@ -161,8 +166,6 @@ cmdLookup=dict(
     outputEnergyUsage=lambda x: float(x)/100.,
 )
 
-print("{}: Create MIB Variables...".format(str(datetime.now())))
-
 mibVariables=[]
 for cmd in commands:
     mibVariables.append(
@@ -170,7 +173,6 @@ for cmd in commands:
     )
 
 def heartbeat():
-    print("{}: Heartbeating...?".format(str(datetime.now())))
     cmdGen=cmdgen.CommandGenerator()
     indication,status,index,varBinds=cmdGen.getCmd(
         cmdgen.CommunityData('public', mpModel=0),
@@ -178,11 +180,10 @@ def heartbeat():
         *mibVariables
     )
 
-    print("{}: Parsed:".format(str(datetime.now())))
-    if indication: print(indication)
+    if indication: logger.info("Indication: {}".format(indication))
     else:
         if status:
-            print("{} at {}".format(
+            logger.error("{} at {}".format(
                 status.prettyPrint(),
                 index and varBinds[int(errorIndex)-1] or '?'
             ))
@@ -191,15 +192,14 @@ def heartbeat():
                 name,val=name.prettyPrint(),val.prettyPrint()
                 try: name=keys[name]
                 except KeyError as e:
-                    print("ERROR:",e)
+                    logger.error("Failed to find key: {}".format(name))
                     continue
                 val=cmdLookup[name](val)
                 _redis.set(name,val)
             _redis.set("heartbeat",str(datetime.now()))
 
-print("{}: Starting...".format(str(datetime.now())))
 while 1:
     try:
         heartbeat()
-        sleep(30)
+        sleep(60)
     except KeyboardInterrupt: break
