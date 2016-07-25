@@ -34,7 +34,6 @@ commands=(
     ('upsHighPrecOutputEnergyUsage',0), # kWh *10
 )
 
-<<<<<<< HEAD
 keys={
     "PowerNet-MIB::upsBasicIdentModel.0":"upsModel",
     "PowerNet-MIB::upsBasicOutputStatus.0":"upsStatus",
