@@ -6,24 +6,25 @@ from pyasn1.codec.ber import decoder
 from pysnmp.proto import api
 from pysnmp.smi import builder, view
 from pysnmp.smi.rfc1902 import ObjectType, ObjectIdentity
-import os, logging
+import os, logging, json
 from logging.handlers import RotatingFileHandler
 import netifaces as ni
 from redis import Redis
 
 print("Setup...")
 
-redis=Redis()
+_redis=Redis()
 
 TRAP_IP_ADDRESS=ni.ifaddresses('eth0')[2][0]['addr']
-#TRAP_IP_ADDRESS=ni.ifaddresses('en0')[2][0]['addr']
 TRAP_PORT=162
 TEN_MEGABYTES=10485760
-#LOG_FILE="./ups.log"
 LOG_FILE="/var/log/ups.log"
 
 COMPILED_MIB_PATH=os.path.join(os.getcwd(), "CompiledMIBs")
 MIB_MODULES=('SNMPv2-MIB', 'SNMP-COMMUNITY-MIB', 'PowerNet-MIB', 'UPS-MIB')
+
+with open('./contacts.json','r') as f:
+    contacts=json.loads(f.read())
 
 LOGGING_FORMAT="%(asctime)s\t%(levelname)s\t%(message)s"
 loggingHandler=RotatingFileHandler(LOG_FILE, maxBytes=TEN_MEGABYTES, backupCount=5)
@@ -75,6 +76,12 @@ def snmpRecvCallback(dispatcher, domain, address, msg):
                 continue
             key,value=parsed.prettyPrint().split(" = ")
             logger.info("TRAP\t{} | {}".format(key,value))
+
+            if key=="PowerNet-MIB::mtrapargsString.0":
+                message=value
+                for contact in contacts['contacts']:
+                    phoneNumber=contact['phoneNumber']
+                    _redis.publish('sms', json.dumps(dict(phoneNumber=phoneNumber, message=message)))
 
     return msg
 
